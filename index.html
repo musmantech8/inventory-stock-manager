@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory &amp; Stock Manager | Muhammad Usman</title>
+  <meta name="description" content="Products, stock movements and low-stock alerts — web demo with an Oracle SQL and PL/SQL backend design." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand"><span class="brand-mark">IS</span><div>Inventory &amp; Stock<small>Products, movements &amp; alerts</small></div></div>
+      <div class="top-actions">
+        <button class="btn" id="moveBtn">⇄ <span>Stock in / out</span></button>
+        <button class="btn btn-primary" id="addBtn">+ <span>Add product</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <div>
+        <h1>Inventory overview</h1>
+        <p>Current stock, value by category and items that need reordering.</p>
+      </div>
+      <button class="btn btn-sm" id="resetBtn">Reset demo data</button>
+    </div>
+
+    <section class="kpis" id="kpis"></section>
+
+    <section class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><h2>Stock value by category</h2></div>
+        <div class="panel-body"><div class="bars" id="catBars"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Low stock alerts</h2></div>
+        <div class="panel-body"><div class="bars" id="lowStock"></div></div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-bottom:24px">
+      <div class="panel-head">
+        <h2>Products <span class="badge b-gray" id="count"></span></h2>
+        <div class="toolbar">
+          <input class="input" id="search" type="search" placeholder="Search SKU or product…" />
+          <select class="select" id="catFilter"><option value="">All categories</option></select>
+          <select class="select" id="levelFilter">
+            <option value="">All stock levels</option><option value="ok">In stock</option><option value="low">Low stock</option><option value="out">Out of stock</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="sku">SKU</th>
+              <th data-sort="name">Product</th>
+              <th data-sort="category">Category</th>
+              <th data-sort="qty">Quantity</th>
+              <th data-sort="price">Unit price (PKR)</th>
+              <th data-sort="value">Stock value</th>
+              <th>Level</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Recent stock movements</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Product</th><th>Type</th><th>Quantity</th><th>Note</th></tr></thead>
+          <tbody id="moves"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>Built by <a href="https://github.com/musmantech8">Muhammad Usman</a> · Front-end demo of an Oracle SQL / PL/SQL application · Data is stored in your browser.</footer>
+
+  <!-- Product form -->
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <header><h2 id="modalTitle">Add product</h2><button class="icon-btn" data-close aria-label="Close">×</button></header>
+      <form id="form">
+        <input type="hidden" name="id" />
+        <div class="form-row">
+          <label>SKU<input class="input" name="sku" required pattern="[A-Za-z0-9-]+" title="Letters, numbers and dashes" /></label>
+          <label>Category<select class="select" name="category" required></select></label>
+        </div>
+        <label>Product name<input class="input" name="name" required /></label>
+        <div class="form-row">
+          <label>Unit price (PKR)<input class="input" name="price" type="number" min="0" step="1" required /></label>
+          <label>Reorder level<input class="input" name="reorder" type="number" min="0" step="1" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Opening quantity<input class="input" name="qty" type="number" min="0" step="1" required /></label>
+          <label>Supplier<input class="input" name="supplier" /></label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Stock movement form -->
+  <div class="modal" id="moveModal" role="dialog" aria-modal="true" aria-labelledby="moveTitle">
+    <div class="modal-card">
+      <header><h2 id="moveTitle">Record stock movement</h2><button class="icon-btn" data-close aria-label="Close">×</button></header>
+      <form id="moveForm">
+        <label>Product<select class="select" name="productId" required></select></label>
+        <div class="form-row">
+          <label>Type<select class="select" name="type"><option value="IN">Stock in (received)</option><option value="OUT">Stock out (issued)</option></select></label>
+          <label>Quantity<input class="input" name="qty" type="number" min="1" step="1" required /></label>
+        </div>
+        <label>Note<input class="input" name="note" placeholder="e.g. Purchase order #1042" /></label>
+        <div class="form-actions">
+          <button type="button" class="btn" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
